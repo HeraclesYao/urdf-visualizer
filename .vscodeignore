@@ -4,6 +4,7 @@
 out/**
 node_modules/**
 src/**
+!python/
 release/**
 media_origin/**
 media/images/**

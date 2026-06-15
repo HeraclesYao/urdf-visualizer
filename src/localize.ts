@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from "fs-extra";
-import { resolve } from "path";
-import { extensions } from "vscode";
+import { resolve, dirname } from "path";
 
 export class Localize {
     public bundle = this.resolveLanguagePack();
@@ -38,10 +37,8 @@ export class Localize {
         const languageFormat = "package.nls{0}.json";
         const defaultLanguage = languageFormat.replace("{0}", "");
 
-        // @ts-ignore
-        const rootPath = extensions.getExtension(
-            "morningfrog.urdf-visualizer"
-        ).extensionPath;
+        // Use __dirname to find extension root (dist/../ = extension root)
+        const rootPath = resolve(__dirname, "..");
 
         const resolvedLanguage = this.recurseCandidates(
             rootPath,

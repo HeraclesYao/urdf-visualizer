@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, onBeforeUnmount } from "vue";
 
 import HintIcon from "/public/icons/hint.svg";
 import ReloadIcon from "/public/icons/reload.svg";
@@ -13,6 +13,16 @@ import { vscode } from "@/utils/vscode-api";
 import JointList from "./JointList.vue";
 import RobotTree from "./RobotTree.vue";
 import SettingsPanel from "./SettingsPanel.vue";
+import AnimationControl from "@/components/AnimationControl.vue";
+import { startAnimationLoop, stopAnimationLoop } from "@/modules/module-animation";
+
+onMounted(() => {
+  startAnimationLoop();
+});
+
+onBeforeUnmount(() => {
+  stopAnimationLoop();
+});
 
 /** 重新加载 URDF */
 const onReloadClick = () => {
@@ -37,9 +47,10 @@ const isXacroPreview = computed(() =>
 );
 </script>
 <template>
-  <div
-    class="flex flex-wrap items-start gap-2 pointer-events-none max-w-[calc(100vw-2.5rem)]"
-  >
+  <div class="flex flex-col gap-2 pointer-events-none w-full">
+    <div
+      class="flex flex-wrap items-start gap-2 max-w-[calc(100vw-2.5rem)]"
+    >
     <div
       class="du-collapse du-collapse-arrow bg-base-100/50 border border-base-300 text-base-content transition-[width] duration-300 w-32 has-[>_input:checked]:w-max has-[>_input:checked]:min-w-62 has-[>_input:checked]:max-w-lg overflow-hidden pointer-events-auto"
     >
@@ -301,6 +312,9 @@ const isXacroPreview = computed(() =>
         </div>
       </template>
     </VTooltip>
+  </div>
+    <!-- Animation Control - second row -->  
+    <AnimationControl class="pointer-events-auto" />
   </div>
 </template>
 <style scoped>

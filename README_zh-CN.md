@@ -27,6 +27,43 @@ A VSCode extension for visualizing URDF files and xacro files.
 - 界面与本地化: 全新的 UI 设计，包含控制面板、Link 列表、Joint 列表和设置面板，并支持英语和简体中文。
   > 如果你需要更多语言支持, 可以在仓库的 Issue 中提出
 
+## URDF Controller 特性
+
+本分支在原有 URDF Visualizer 基础上扩展了轨迹动画功能：
+
+### CSV 轨迹动画
+- 加载定义各关节角度轨迹的 CSV 文件
+- 按可配置帧率播放动画（支持 CSV 的原生 FPS，通常为 30Hz）
+- 播放控制：播放/暂停、停止、逐帧前进/后退、通过进度条跳转
+- 播放速度调节：0.5x、1x、2x
+- 循环播放支持
+- 帧间线性插值，保证平滑运动
+- 播放时自动限制在关节限位范围内
+- CSV 格式：`timestamp,joint1,joint2,...`，时间单位为秒，关节值为弧度
+
+### LeRobot V3.0 数据集支持
+- 直接加载 LeRobot V3.0 格式数据集（支持 `action` 和 `observation.state` 两种数据源）
+- 通过内置 Python 辅助脚本自动读取 parquet 文件（需 Python 3 + `pyarrow`）
+- 交互式关节映射配置界面：
+  - 选择数据源（action 或 observation.state）
+  - 将数据集维度索引映射到 URDF 关节名称
+  - 可选的每个关节偏置（offset）和缩放（scale）变换
+- 映射配置保存为 `lerobot_mapping.json`，存放在数据集目录中，下次直接使用
+- 按数据集的原始 FPS 播放（通常为 30Hz）
+
+### 本地安装
+- `npm run package:local` — 编译并打包扩展为 `.vsix` 文件
+- `npm run install:local` — 将 `.vsix` 安装到本地 VSCode（需要 `code` 命令行工具）
+- 详见 [DEVELOPING.md](./DEVELOPING.md) 中的本地安装说明
+
+### 使用方法
+1. 打开 URDF 文件，点击 👁 预览按钮
+2. 在顶部动画控制栏中：
+   - **Load CSV**：选择 CSV 轨迹文件
+   - **Load LeRobot**：选择 LeRobot 数据集目录（包含 `meta/` 和 `data/`）
+3. 对于没有映射文件的 LeRobot 数据集，会弹出配置对话框设置关节映射
+4. 使用播放控件驱动机器人动画
+
 ## 扩展设置
 
 这些设置按用途分组如下:
@@ -116,10 +153,13 @@ A VSCode extension for visualizing URDF files and xacro files.
 
 ## 安装
 
-有三种安装方式:
-- 在 VSCode 的扩展中搜索 URDF Visualizer 并安装.
-- 在 VSCode 中使用 `Ctrl+Shift+P` 打开命令栏, 输入 `ext install morningfrog.urdf-visualizer`.
-- 在该仓库的 Release 中下载 `.vsix` 文件, 然后在 VSCode 的扩展右上角选择 "从 VSIX 安装", 选择下载的 `.vsix` 文件进行安装.
+本分支在原扩展基础上增加了额外功能，安装方式：
+
+- **本地构建**: 运行 `npm run package:local` 然后 `npm run install:local`（需要 `code` 命令行工具）
+- **手动 VSIX 安装**: 运行 `npm run package:local`，然后在 VSCode 扩展面板 → `...` → `从 VSIX 安装`，选择 `urdf-controller-*.vsix`
+- **原始扩展**: 在 VSCode 扩展中搜索 "URDF Visualizer" 或使用 `ext install morningfrog.urdf-visualizer`
+
+详见 [DEVELOPING.md](./DEVELOPING.md) 中的完整构建说明。
 
 
 ## 已知问题

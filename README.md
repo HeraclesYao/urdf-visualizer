@@ -28,6 +28,43 @@ A VSCode extension for visualizing URDF files and xacro files.
 - Interface and localization: new UI with dedicated Control, Links, Joints, and Settings panels, tree/flat Link views, plus English and Simplified Chinese support.
   > If you need more language support, you can raise it in the issue of the repository
 
+## URDF Controller Features
+
+This fork extends the base URDF Visualizer with trajectory animation capabilities:
+
+### CSV Trajectory Animation
+- Load a CSV file defining joint angle trajectories for each URDF joint
+- Play animation at configurable frame rate (supports the CSV's native FPS, typically 30Hz)
+- Playback controls: Play/Pause, Stop, Step Forward/Backward, Seek via progress slider
+- Playback speed adjustment: 0.5x, 1x, 2x
+- Loop playback support
+- Linear interpolation between frames for smooth motion
+- Joint limit clamping respected during playback
+- CSV format: `timestamp,joint1,joint2,...` with timestamp in seconds and joint values in radians
+
+### LeRobot V3.0 Dataset Support
+- Load LeRobot V3.0 format datasets directly (supports both `action` and `observation.state` data sources)
+- Automatic parquet file reading via bundled Python helper (requires Python 3 with `pyarrow`)
+- Interactive joint mapping configuration UI:
+  - Select data source (action or observation.state)
+  - Map dataset dimension indices to URDF joint names
+  - Optional per-joint offset and scale transforms
+- Mapping saved to `lerobot_mapping.json` alongside the dataset for reuse
+- Plays at the dataset's native FPS (typically 30Hz)
+
+### Local Installation
+- `npm run package:local` — Build and package the extension into a `.vsix` file
+- `npm run install:local` — Install the `.vsix` into VSCode locally (requires `code` CLI)
+- See [DEVELOPING.md](./DEVELOPING.md) for detailed local installation instructions
+
+### Usage
+1. Open a URDF file and click the 👁 preview button
+2. In the animation control bar at the top:
+   - **Load CSV**: Select a CSV trajectory file
+   - **Load LeRobot**: Select a LeRobot dataset directory (contains `meta/` and `data/`)
+3. For LeRobot datasets without a mapping file, a configuration dialog appears to set up joint mapping
+4. Use the playback controls to animate the robot
+
 ## Extension Settings
 
 This extension contributes the following settings, grouped by purpose:
@@ -117,10 +154,13 @@ Operations:
 
 ## Install
 
-There are three installation methods:
-- Search for "URDF Visualizer" in VSCode extensions and install it.
-- In VSCode, use `Ctrl+Shift+P` to open the Command Panel and enter `ext install morningfrog.urdf-visualizer`.
-- Download the `.vsix` file in the Release of the repository, then select `Install from VSIX` in the upper right corner of the VSCode extension, and choose the downloaded `.vsix` file for installation.
+This is a fork with additional features. Installation methods:
+
+- **Local build**: Run `npm run package:local` then `npm run install:local` (requires `code` CLI)
+- **Manual VSIX**: Build with `npm run package:local`, then in VSCode Extensions panel → `...` → `Install from VSIX...`, select `urdf-controller-*.vsix`
+- **Original extension**: Search "URDF Visualizer" in VSCode extensions or use `ext install morningfrog.urdf-visualizer`
+
+See [DEVELOPING.md](./DEVELOPING.md) for full build instructions.
 
 ## Known Issues
 

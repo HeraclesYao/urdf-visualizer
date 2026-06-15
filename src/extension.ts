@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as path from "path";
 import * as vscode from "vscode";
+import * as fs from "fs";
 import {
     extractMissingPackageFromErrorMessage,
     findMissingPackagesInUrdf,
@@ -13,6 +14,7 @@ import {
 import localize, { localizeInstance } from "./localize";
 import { xacroParser } from "./xacro-parser-instance";
 const { XMLSerializer, XMLDocument } = require("xmldom");
+import { parseLerobotDataset, type LerobotMapping } from "./lerobot-parser";
 
 interface WebviewVscodeSettingsPayload {
     cacheMesh?: boolean;
@@ -367,6 +369,116 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
+    async function handleCSVRequest() {
+        if (!activePanel) return;
+        
+        const files = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            filters: {
+                'CSV Files': ['csv'],
+                'All Files': ['*']
+            },
+            title: 'Select CSV Trajectory File'
+        });
+        
+        if (!files || files.length === 0) return;
+        
+        try {
+            const csvText = fs.readFileSync(files[0].fsPath, 'utf-8');
+            activePanel.webview.postMessage({
+                type: 'csvData',
+                csvText: csvText,
+                filename: path.basename(files[0].fsPath)
+            });
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Failed to read CSV file: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
+    }
+
+    async function handleLerobotRequest() {
+        if (!activePanel) return;
+        
+        const folders = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            canSelectFolders: true,
+            canSelectFiles: false,
+            title: 'Select LeRobot Dataset Directory'
+        });
+        
+        if (!folders || folders.length === 0) return;
+        
+        const datasetDir = folders[0].fsPath;
+        
+        try {
+            const mappingPath = path.join(datasetDir, "lerobot_mapping.json");
+            let mapping: LerobotMapping | null = null;
+            
+            if (fs.existsSync(mappingPath)) {
+                try {
+                    mapping = JSON.parse(fs.readFileSync(mappingPath, "utf-8"));
+                } catch {}
+            }
+            
+            if (mapping) {
+                const data = parseLerobotDataset(datasetDir, mapping);
+                activePanel.webview.postMessage({
+                    type: "lerobotData",
+                    frames: data.frames,
+                    jointNames: data.jointNames,
+                    frameCount: data.frameCount,
+                    duration: data.duration,
+                    fps: data.fps,
+                    sourceColumn: mapping.dataSource,
+                    dimensionCount: data.dimensionCount,
+                });
+            } else {
+                const infoPath = path.join(datasetDir, "meta", "info.json");
+                if (!fs.existsSync(infoPath)) {
+                    vscode.window.showErrorMessage("Invalid LeRobot dataset: meta/info.json not found");
+                    return;
+                }
+                const info = JSON.parse(fs.readFileSync(infoPath, "utf-8"));
+                activePanel.webview.postMessage({
+                    type: "lerobotInfo",
+                    datasetDir: datasetDir,
+                    info: info,
+                    needsMapping: true,
+                });
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Failed to load LeRobot dataset: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
+    }
+
+    async function handleSaveLerobotMapping(message: any) {
+        if (!message.datasetDir || !message.mapping) return;
+        
+        const mappingPath = path.join(message.datasetDir, "lerobot_mapping.json");
+        try {
+            fs.writeFileSync(mappingPath, JSON.stringify(message.mapping, null, 2), "utf-8");
+            const mapping = message.mapping as LerobotMapping;
+            const data = parseLerobotDataset(message.datasetDir, mapping);
+            activePanel?.webview.postMessage({
+                type: "lerobotData",
+                frames: data.frames,
+                jointNames: data.jointNames,
+                frameCount: data.frameCount,
+                duration: data.duration,
+                fps: data.fps,
+                sourceColumn: mapping.dataSource,
+                dimensionCount: data.dimensionCount,
+            });
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Failed to save mapping: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
+    }
+
     const previewCommand = vscode.commands.registerCommand(
         "urdf-visualizer.previewURDFXacro", // 预览 URDF 或 Xacro 文件
         () => {
@@ -496,6 +608,12 @@ export function activate(context: vscode.ExtensionContext) {
                             } else {
                                 vscode.window.showErrorMessage(message.message);
                             }
+                        } else if (message.type === "requestCSV") {
+                            handleCSVRequest();
+                        } else if (message.type === "requestLerobotDataset") {
+                            handleLerobotRequest();
+                        } else if (message.type === "saveLerobotMapping") {
+                            handleSaveLerobotMapping(message);
                         }
                     });
                 }

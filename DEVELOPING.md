@@ -48,3 +48,51 @@ docs: update developing guide
 ```
 
 从 `5.2.0` 版本开始，Git tag 使用带 `v` 前缀的版本号，例如 `v5.2.0`，而不是以前的 `5.2.0`。
+
+## 本地安装 (Local Installation)
+
+### 方法一：命令行安装
+
+1. 编译并打包扩展:
+
+   ```bash
+   npm run package:local
+   ```
+
+   这会在项目根目录生成 `urdf-visualizer-local.vsix` 文件。
+
+2. 安装到 VSCode:
+
+   ```bash
+   npm run install:local
+   ```
+
+   或手动安装:
+
+   ```bash
+   code --install-extension urdf-visualizer-local.vsix --force
+   ```
+
+> **注意**: 使用 `code` 命令需要先在 VSCode 中安装命令行工具:
+> - 打开 VSCode
+> - 按 `Cmd+Shift+P` (macOS) 或 `Ctrl+Shift+P` (Windows/Linux)
+> - 输入 `Shell Command: Install 'code' command in PATH`
+
+### 方法二：从 VSCode 界面安装
+
+1. 编译并打包扩展:
+
+   ```bash
+   npm run package:local
+   ```
+
+2. 在 VSCode 中:
+   - 打开扩展面板 (`Cmd+Shift+X` / `Ctrl+Shift+X`)
+   - 点击右上角的 `...` 菜单
+   - 选择 `Install from VSIX...`
+   - 选择生成的 `urdf-visualizer-local.vsix` 文件
+
+### 方法三：开发模式运行
+
+在 VSCode 中按 `F5` 启动扩展开发主机 (Extension Development Host)，
+即可在调试模式下运行扩展。修改代码后在开发主机中按 `Cmd+R` (macOS) 或 `Ctrl+R` (Windows/Linux) 重新加载。

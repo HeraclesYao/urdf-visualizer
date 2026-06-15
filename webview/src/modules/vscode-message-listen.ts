@@ -1,4 +1,4 @@
-import { createApp, type App as VueApp } from "vue";
+import { createApp, reactive, type App as VueApp } from "vue";
 import FloatingVue from "floating-vue";
 import Vue3ColorPicker from "vue3-colorpicker";
 import { vscodeSettings } from "@/stores/vscode-settings";
@@ -8,8 +8,17 @@ import { vscode } from "@/utils/vscode-api";
 import { i18nMessages } from "@/stores/i18n";
 import App from "@/App.vue";
 import { vClampCenterX } from "@/directives/clampCenterX";
+import { parseCSV } from "@/utils/csv-parser";
+import { animationStore, loadCSVData } from "@/stores/animation-store";
 
 let app: VueApp<Element> | null = null;
+
+// LeRobot info state (shared with MappingConfig component)
+export const lerobotInfoState = reactive({
+    datasetDir: "",
+    info: null as any,
+    showMapping: false,
+});
 
 function assignDefined<T extends object>(
     target: T,
@@ -94,6 +103,44 @@ window.addEventListener("message", (event) => {
         }
         if (message.initialJointValues) {
             vscodeSettings.initialJointValues = message.initialJointValues;
+        }
+    }
+    if (message.type === "csvData") {
+        if (message.csvText && typeof message.csvText === "string") {
+            try {
+                const parsed = parseCSV(message.csvText);
+                loadCSVData(parsed);
+            } catch (error) {
+                console.error("Failed to parse CSV data:", error);
+            }
+        }
+    }
+    if (message.type === "lerobotInfo") {
+        if (message.datasetDir && message.info && message.needsMapping) {
+            lerobotInfoState.datasetDir = message.datasetDir;
+            lerobotInfoState.info = message.info;
+            lerobotInfoState.showMapping = true;
+        }
+    }
+    if (message.type === "lerobotData") {
+        if (message.frames && message.fps) {
+            try {
+                const frames = message.frames.map((f: any) => ({
+                    timestamp: f.timestamp || f.t,
+                    jointValues: f.jointValues,
+                }));
+                const parsed = {
+                    frames,
+                    jointNames: message.jointNames || [],
+                    frameCount: message.frameCount || frames.length,
+                    duration: message.duration || (frames.length > 0 ? frames[frames.length - 1].timestamp : 0),
+                    fps: message.fps,
+                };
+                loadCSVData(parsed);
+                lerobotInfoState.showMapping = false;
+            } catch (error) {
+                console.error("Failed to load LeRobot data:", error);
+            }
         }
     }
 

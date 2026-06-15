@@ -8,4 +8,12 @@ node_modules
 *.vsix
 npminstall-debug.log
 TODO.md
+.history/
+log.txt
+test-robot.urdf
+test-trajectory.csv
 
+.omo/
+CODEBASE_ANALYSIS.md
+fix_template.js
+log.txt
